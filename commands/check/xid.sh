@@ -37,6 +37,15 @@ pgtool_check_xid() {
                 opts+=("$1")
                 shift
                 ;;
+            --format)
+                shift
+                PGTOOL_FORMAT="$1"
+                shift
+                ;;
+            --timeout|--color|--log-level|--host|--port|--user|--dbname)
+                shift
+                shift
+                ;;
             *)
                 args+=("$1")
                 shift
@@ -60,15 +69,16 @@ pgtool_check_xid() {
         return $EXIT_CONNECTION_ERROR
     fi
 
-    # 执行 SQL，使用表格格式
+    # 执行 SQL
     local result
+    local format_args
+    format_args=$(pgtool_pset_args "${PGTOOL_FORMAT}")
+
     result=$(timeout "$PGTOOL_TIMEOUT" psql \
         "${PGTOOL_CONN_OPTS[@]}" \
         --file="$sql_file" \
         --pset=pager=off \
-        --pset=format=aligned \
-        --pset=border=2 \
-        --pset=null='<null>' \
+        $format_args \
         2>&1)
 
     local exit_code=$?
