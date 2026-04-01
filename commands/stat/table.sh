@@ -3,6 +3,7 @@
 
 pgtool_stat_table() {
     local schema=""
+    local table=""
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -13,6 +14,19 @@ pgtool_stat_table() {
             --schema)
                 shift
                 schema="$1"
+                shift
+                ;;
+            --table)
+                shift
+                table="$1"
+                shift
+                ;;
+            --schema=*)
+                schema="${1#*=}"
+                shift
+                ;;
+            --table=*)
+                table="${1#*=}"
                 shift
                 ;;
             *)
@@ -30,15 +44,22 @@ pgtool_stat_table() {
         return $EXIT_CONNECTION_ERROR
     fi
 
-    # 如果有 schema 过滤，修改 SQL
+    # 如果有 schema 或 table 过滤，修改 SQL
     local sql_content
+    sql_content=$(cat "$sql_file")
+
     if [[ -n "$schema" ]]; then
-        sql_content=$(cat "$sql_file")
         sql_content="${sql_content//WHERE schemaname NOT IN/WHERE schemaname = '$schema' AND schemaname NOT IN}"
     fi
 
+    # 添加 table 过滤条件
+    if [[ -n "$table" ]]; then
+        # 在 WHERE 条件中添加 table 过滤
+        sql_content="${sql_content//WHERE schemaname NOT IN ('pg_catalog', 'information_schema')/WHERE schemaname NOT IN ('pg_catalog', 'information_schema')\n  AND relname = '$table'}"
+    fi
+
     local result
-    if [[ -n "$schema" ]]; then
+    if [[ -n "$schema" || -n "$table" ]]; then
         result=$(echo "$sql_content" | timeout "$PGTOOL_TIMEOUT" psql \
             "${PGTOOL_CONN_OPTS[@]}" \
             --pset=pager=off \
@@ -69,11 +90,15 @@ pgtool_stat_table() {
     row_count=$(echo "$result" | grep -c '^|' 2>/dev/null | head -1 || echo 0)
 
     if [[ $row_count -le 2 ]]; then
-        pgtool_info "没有找到用户表"
+        if [[ -n "$table" ]]; then
+            pgtool_info "没有找到表: ${schema:+$schema.}$table"
+        else
+            pgtool_info "没有找到用户表"
+        fi
         return 0
     fi
 
-    pgtool_info "表级统计 (Top 20 by size):"
+    pgtool_info "表级统计:"
     echo ""
     echo "$result"
 
@@ -104,9 +129,12 @@ pgtool_stat_table_help() {
 选项:
   -h, --help          显示帮助
       --schema NAME   指定 schema
+      --table NAME    指定表名（支持单独使用或与 --schema 组合）
 
 示例:
   pgtool stat table
   pgtool stat table --schema=public
+  pgtool stat table --table=users
+  pgtool stat table --schema=public --table=users
 EOF
 }

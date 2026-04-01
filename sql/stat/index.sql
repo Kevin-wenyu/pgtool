@@ -1,6 +1,6 @@
 -- sql/stat/index.sql
 -- 查看索引使用情况
--- 参数：无
+-- 参数：可选 schema 名、可选 table 名
 
 SELECT
     schemaname || '.' || relname AS "Table",

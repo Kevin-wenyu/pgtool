@@ -1,6 +1,6 @@
 -- sql/stat/table.sql
 -- 查看表级统计
--- 参数：可选 schema 名
+-- 参数：可选 schema 名、可选 table 名
 
 SELECT
     schemaname || '.' || relname AS "Table",

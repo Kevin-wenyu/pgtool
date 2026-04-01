@@ -2,6 +2,9 @@
 # commands/stat/indexes.sh - 查看索引使用情况
 
 pgtool_stat_indexes() {
+    local schema=""
+    local table=""
+
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -h|--help)
@@ -10,6 +13,24 @@ pgtool_stat_indexes() {
                 ;;
             --unused)
                 PGTOOL_SHOW_UNUSED=1
+                shift
+                ;;
+            --schema)
+                shift
+                schema="$1"
+                shift
+                ;;
+            --table)
+                shift
+                table="$1"
+                shift
+                ;;
+            --schema=*)
+                schema="${1#*=}"
+                shift
+                ;;
+            --table=*)
+                table="${1#*=}"
                 shift
                 ;;
             *)
@@ -27,14 +48,37 @@ pgtool_stat_indexes() {
         return $EXIT_CONNECTION_ERROR
     fi
 
+    # 如果有 schema 或 table 过滤，修改 SQL
+    local sql_content
+    sql_content=$(cat "$sql_file")
+
+    if [[ -n "$schema" ]]; then
+        sql_content="${sql_content//WHERE schemaname NOT IN/WHERE schemaname = '$schema' AND schemaname NOT IN}"
+    fi
+
+    # 添加 table 过滤条件
+    if [[ -n "$table" ]]; then
+        # 在 WHERE 条件中添加 table 过滤
+        sql_content="${sql_content//WHERE schemaname NOT IN ('pg_catalog', 'information_schema')/WHERE schemaname NOT IN ('pg_catalog', 'information_schema')\n  AND relname = '$table'}"
+    fi
+
     local result
-    result=$(timeout "$PGTOOL_TIMEOUT" psql \
-        "${PGTOOL_CONN_OPTS[@]}" \
-        --file="$sql_file" \
-        --pset=pager=off \
-        --pset=format=aligned \
-        --pset=border=2 \
-        2>&1)
+    if [[ -n "$schema" || -n "$table" ]]; then
+        result=$(echo "$sql_content" | timeout "$PGTOOL_TIMEOUT" psql \
+            "${PGTOOL_CONN_OPTS[@]}" \
+            --pset=pager=off \
+            --pset=format=aligned \
+            --pset=border=2 \
+            2>&1)
+    else
+        result=$(timeout "$PGTOOL_TIMEOUT" psql \
+            "${PGTOOL_CONN_OPTS[@]}" \
+            --file="$sql_file" \
+            --pset=pager=off \
+            --pset=format=aligned \
+            --pset=border=2 \
+            2>&1)
+    fi
 
     local exit_code=$?
 
@@ -46,14 +90,14 @@ pgtool_stat_indexes() {
         return $EXIT_SQL_ERROR
     fi
 
-    pgtool_info "索引统计 (Top 30 by size):"
+    pgtool_info "索引统计:"
     echo ""
     echo "$result"
 
     # 检查未使用的索引
     local unused_count
-    unused_count=$(echo "$result" | grep -c 'UNUSED' 2>/dev/null | head -1 || echo 0)
-    unused_count=$(echo "$unused_count" | tr -d ' ')
+    unused_count=$(echo "$result" | grep -c 'UNUSED' 2>/dev/null || echo 0)
+    unused_count=$(echo "$unused_count" | head -1 | tr -d ' ')
 
     if [[ "$unused_count" -gt 0 ]]; then
         echo ""
@@ -64,8 +108,8 @@ pgtool_stat_indexes() {
 
     # 检查低使用索引
     local low_count
-    low_count=$(echo "$result" | grep -c 'LOW' 2>/dev/null | head -1 || echo 0)
-    low_count=$(echo "$low_count" | tr -d ' ')
+    low_count=$(echo "$result" | grep -c 'LOW' 2>/dev/null || echo 0)
+    low_count=$(echo "$low_count" | head -1 | tr -d ' ')
 
     if [[ "$low_count" -gt 0 ]]; then
         echo ""
@@ -89,10 +133,14 @@ pgtool_stat_indexes_help() {
 选项:
   -h, --help     显示帮助
       --unused   只显示未使用的索引
+      --schema NAME   指定 schema
+      --table NAME    指定表名（支持单独使用或与 --schema 组合）
 
 示例:
   pgtool stat indexes
   pgtool stat indexes --unused
+  pgtool stat indexes --table=users
+  pgtool stat indexes --schema=public --table=users
 
 提示:
   UNUSED - 从未被使用的索引，可以考虑删除
