@@ -11,6 +11,6 @@ SELECT
     COUNT(*) AS "Total"
 FROM pg_stat_activity s
 WHERE s.backend_type = 'client backend'
-  AND (:username IS NULL OR s.usename = :username)
+  AND (:'username' = 'NULL' OR s.usename = :'username')
 GROUP BY s.usename
 ORDER BY s.usename;
