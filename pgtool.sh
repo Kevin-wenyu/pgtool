@@ -18,6 +18,7 @@ source "$PGTOOL_SCRIPT_DIR/lib/log.sh"
 source "$PGTOOL_SCRIPT_DIR/lib/util.sh"
 source "$PGTOOL_SCRIPT_DIR/lib/output.sh"
 source "$PGTOOL_SCRIPT_DIR/lib/pg.sh"
+source "$PGTOOL_SCRIPT_DIR/lib/backup.sh"
 source "$PGTOOL_SCRIPT_DIR/lib/plugin.sh"
 source "$PGTOOL_SCRIPT_DIR/lib/cli.sh"
 
