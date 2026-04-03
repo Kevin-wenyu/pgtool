@@ -82,15 +82,40 @@ main() {
     # 解析全局选项
     local -a remaining_args=()
 
+    # 检查是否为命令组帮助模式（如: pgtool check --help）
+    local cmd_group=""
+    local is_group_help=false
+    if [[ $# -ge 2 ]]; then
+        case "$1" in
+            check|stat|admin|analyze|monitor|plugin)
+                cmd_group="$1"
+                if [[ "$2" == "--help" ]] || [[ "$2" == "-h" ]]; then
+                    is_group_help=true
+                fi
+                ;;
+        esac
+    fi
+
+    # 如果不是命令组帮助，解析全局选项
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -h|--help)
-                pgtool_global_help
-                return $EXIT_SUCCESS
+                # 只有在没有剩余参数时才显示全局帮助
+                if [[ ${#remaining_args[@]} -eq 0 && -z "$cmd_group" ]]; then
+                    pgtool_global_help
+                    return $EXIT_SUCCESS
+                fi
+                # 否则将 --help 传递给子命令
+                remaining_args+=("$1")
+                shift
                 ;;
             -v|--version)
                 pgtool_version
                 return $EXIT_SUCCESS
+                ;;
+            -c=*|--config=*)
+                PGTOOL_CONFIG_FILE="${1#*=}"
+                shift
                 ;;
             -c|--config)
                 shift
@@ -100,11 +125,22 @@ main() {
                 fi
                 shift
                 ;;
+            --format=*)
+                PGTOOL_FORMAT="${1#*=}"
+                shift
+                ;;
             --format)
                 shift
                 PGTOOL_FORMAT="${1:-}"
                 if [[ -z "$PGTOOL_FORMAT" ]]; then
                     pgtool_fatal "--format 需要参数"
+                fi
+                shift
+                ;;
+            --timeout=*)
+                PGTOOL_TIMEOUT="${1#*=}"
+                if ! is_int "$PGTOOL_TIMEOUT"; then
+                    pgtool_fatal "--timeout 必须是整数"
                 fi
                 shift
                 ;;
@@ -119,12 +155,20 @@ main() {
                 fi
                 shift
                 ;;
+            --color=*)
+                PGTOOL_COLOR="${1#*=}"
+                shift
+                ;;
             --color)
                 shift
                 PGTOOL_COLOR="${1:-}"
                 if [[ -z "$PGTOOL_COLOR" ]]; then
                     pgtool_fatal "--color 需要参数"
                 fi
+                shift
+                ;;
+            --log-level=*)
+                PGTOOL_LOG_LEVEL="${1#*=}"
                 shift
                 ;;
             --log-level)
@@ -135,10 +179,20 @@ main() {
                 fi
                 shift
                 ;;
+            --host=*)
+                PGTOOL_HOST="${1#*=}"
+                export PGHOST="$PGTOOL_HOST"
+                shift
+                ;;
             --host)
                 shift
                 PGTOOL_HOST="${1:-}"
                 export PGHOST="$PGTOOL_HOST"
+                shift
+                ;;
+            --port=*)
+                PGTOOL_PORT="${1#*=}"
+                export PGPORT="$PGTOOL_PORT"
                 shift
                 ;;
             --port)
@@ -147,10 +201,20 @@ main() {
                 export PGPORT="$PGTOOL_PORT"
                 shift
                 ;;
+            --user=*|--username=*)
+                PGTOOL_USER="${1#*=}"
+                export PGUSER="$PGTOOL_USER"
+                shift
+                ;;
             --user|--username)
                 shift
                 PGTOOL_USER="${1:-}"
                 export PGUSER="$PGTOOL_USER"
+                shift
+                ;;
+            --dbname=*|--database=*)
+                PGTOOL_DATABASE="${1#*=}"
+                export PGDATABASE="$PGTOOL_DATABASE"
                 shift
                 ;;
             --dbname|--database)

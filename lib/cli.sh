@@ -12,7 +12,7 @@ fi
 #==============================================================================
 
 # 支持的命令组
-PGTOOL_GROUPS=("check" "stat" "admin" "analyze" "user" "plugin")
+PGTOOL_GROUPS=("check" "stat" "admin" "analyze" "monitor" "user" "plugin")
 
 # 命令组描述（用于帮助）
 pgtool_group_desc() {
@@ -22,6 +22,7 @@ pgtool_group_desc() {
         stat)    echo "统计信息 - 查看数据库统计" ;;
         admin)   echo "管理操作 - 执行管理任务" ;;
         analyze) echo "分析诊断 - 分析问题并建议" ;;
+        monitor) echo "实时监控 - 实时监控数据库状态" ;;
         user)    echo "用户管理 - 用户、角色和权限管理" ;;
         plugin)  echo "插件管理 - 管理扩展插件" ;;
         *)       echo "" ;;
