@@ -93,6 +93,7 @@ pgtool_check_long_tx() {
     # 检查是否有长事务
     local count
     count=$(echo "$result" | grep -c "^[[:space:]]*[0-9]" 2>/dev/null || echo "0")
+    count=$(echo "$count" | tr -d '\n')
 
     if [[ $count -gt 0 ]]; then
         pgtool_warn "发现 ${count} 个运行超过 ${PGTOOL_LONG_TX_THRESHOLD} 分钟的事务"
