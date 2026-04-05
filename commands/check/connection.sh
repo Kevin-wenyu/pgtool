@@ -29,12 +29,13 @@ pgtool_check_connection() {
     fi
 
     local result
+    local format_args
+    format_args=$(pgtool_pset_args "${PGTOOL_FORMAT}")
+
     result=$(timeout "$PGTOOL_TIMEOUT" psql \
         "${PGTOOL_CONN_OPTS[@]}" \
         --file="$sql_file" \
-        --pset=pager=off \
-        --pset=format=aligned \
-        --pset=border=2 \
+        $format_args \
         2>&1)
 
     local exit_code=$?
@@ -51,15 +52,17 @@ pgtool_check_connection() {
     echo ""
     echo "$result"
 
-    # 检查使用率
-    local usage
-    usage=$(echo "$result" | grep -E '^\|' | grep -v 'Max' | awk -F'|' '{print $7}' | tr -d ' %')
-    local threshold="${PGTOOL_CONN_THRESHOLD:-80}"
+    # 检查使用率（仅在表格格式下）
+    if [[ "${PGTOOL_FORMAT:-table}" == "table" ]] || [[ "${PGTOOL_FORMAT:-}" == "aligned" ]]; then
+        local usage
+        usage=$(echo "$result" | grep -E '^\|' | grep -v 'Max' | awk -F'|' '{print $8}' | tr -d ' %' | head -1)
+        local threshold="${PGTOOL_CONN_THRESHOLD:-80}"
 
-    if [[ -n "$usage" ]] && [[ "$usage" != "N/A" ]]; then
-        if (( $(echo "$usage > $threshold" | bc -l) )); then
-            pgtool_warn "连接使用率超过 ${threshold}%: ${usage}%"
-            return 1
+        if [[ -n "$usage" ]] && [[ "$usage" != "N/A" ]] && command -v bc >/dev/null 2>&1; then
+            if (( $(echo "$usage > $threshold" | bc -l) )); then
+                pgtool_warn "连接使用率超过 ${threshold}%: ${usage}%"
+                return 1
+            fi
         fi
     fi
 

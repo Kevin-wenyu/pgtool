@@ -48,24 +48,26 @@ pgtool_stat_table() {
     local sql_content
     sql_content=$(cat "$sql_file")
 
-    if [[ -n "$schema" ]]; then
-        sql_content="${sql_content//WHERE schemaname NOT IN/WHERE schemaname = '$schema' AND schemaname NOT IN}"
-    fi
-
-    # 添加 table 过滤条件
-    if [[ -n "$table" ]]; then
-        # 在 WHERE 条件中添加 table 过滤
-        sql_content="${sql_content//WHERE schemaname NOT IN ('pg_catalog', 'information_schema')/WHERE schemaname NOT IN ('pg_catalog', 'information_schema')\n  AND relname = '$table'}"
+    # 添加 table 过滤条件（必须在 schema 替换之前）
+    if [[ -n "$table" && -n "$schema" ]]; then
+        # 同时指定了 schema 和 table，替换整个 WHERE 子句
+        sql_content=$(awk -v s="$schema" -v t="$table" 'NR==30 {$0="WHERE schemaname = \047"s"\047 AND relname = \047"t"\047 AND schemaname NOT IN (\047pg_catalog\047, \047information_schema\047)"} 1' <<< "$sql_content")
+    elif [[ -n "$table" ]]; then
+        # 只指定了 table，在第 30 行添加表名过滤
+        sql_content=$(awk -v t="$table" 'NR==30 {$0=$0" AND relname = \047"t"\047"} 1' <<< "$sql_content")
+    elif [[ -n "$schema" ]]; then
+        # 只指定了 schema，替换 WHERE 子句
+        sql_content=$(awk -v s="$schema" 'NR==30 {$0="WHERE schemaname = \047"s"\047 AND schemaname NOT IN (\047pg_catalog\047, \047information_schema\047)"} 1' <<< "$sql_content")
     fi
 
     local result
     if [[ -n "$schema" || -n "$table" ]]; then
-        result=$(echo "$sql_content" | timeout "$PGTOOL_TIMEOUT" psql \
+        result=$(timeout "$PGTOOL_TIMEOUT" psql \
             "${PGTOOL_CONN_OPTS[@]}" \
             --pset=pager=off \
             --pset=format=aligned \
             --pset=border=2 \
-            2>&1)
+            2>&1 <<< "$sql_content")
     else
         result=$(timeout "$PGTOOL_TIMEOUT" psql \
             "${PGTOOL_CONN_OPTS[@]}" \
@@ -89,7 +91,10 @@ pgtool_stat_table() {
     local row_count
     row_count=$(echo "$result" | grep -c '^|' 2>/dev/null | head -1 || echo 0)
 
-    if [[ $row_count -le 2 ]]; then
+    # 检查是否有数据行（row_count > 2 表示有表头、分隔线和至少一行数据）
+    # 实际上表头和数据行都以 | 开头，分隔线以 + 开头
+    # 所以如果只有 2 行以 | 开头，表示只有表头和一行数据，这是正常的
+    if [[ $row_count -lt 2 ]]; then
         if [[ -n "$table" ]]; then
             pgtool_info "没有找到表: ${schema:+$schema.}$table"
         else

@@ -11,6 +11,10 @@ PGTOOL_ROOT="$(cd "$TEST_DIR/.." && pwd)"
 source "$PGTOOL_ROOT/lib/core.sh"
 source "$PGTOOL_ROOT/lib/log.sh"
 source "$PGTOOL_ROOT/lib/util.sh"
+source "$PGTOOL_ROOT/lib/plugin.sh"
+
+# 加载插件
+pgtool_load_plugins 2>/dev/null || true
 
 #==============================================================================
 # 测试框架
@@ -37,7 +41,10 @@ setup() {
 # 测试清理
 teardown() {
     local end_time=$(date +%s)
-    local duration=$((end_time - TEST_START_TIME))
+    local duration=0
+    if [[ $TEST_START_TIME -gt 0 ]]; then
+        duration=$((end_time - TEST_START_TIME))
+    fi
 
     echo ""
     echo "======================================"
@@ -45,7 +52,7 @@ teardown() {
     echo "  通过: $TESTS_PASSED"
     echo "  失败: $TESTS_FAILED"
     echo "  跳过: $TESTS_SKIPPED"
-    echo "  总计: $((TESTS_PASSED + TEST_FAILED + TESTS_SKIPPED))"
+    echo "  总计: $((TESTS_PASSED + TESTS_FAILED + TESTS_SKIPPED))"
     echo "  用时: ${duration}s"
     echo "======================================"
 
@@ -75,11 +82,11 @@ run_test() {
 
     if output=$("$test_func" 2>&1); then
         echo "PASS"
-        ((TESTS_PASSED++))
+        ((TESTS_PASSED++)) || true
     else
         echo "FAIL"
         echo "    输出: $output"
-        ((TESTS_FAILED++))
+        ((TESTS_FAILED++)) || true
     fi
 }
 

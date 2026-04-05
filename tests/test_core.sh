@@ -63,3 +63,6 @@ run_test "test_name_defined" "test_name_defined"
 run_test "test_exit_codes" "test_exit_codes"
 run_test "test_defaults" "test_defaults"
 run_test "test_color_codes" "test_color_codes"
+
+# 运行清理并输出汇总
+teardown

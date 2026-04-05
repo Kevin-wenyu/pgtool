@@ -70,3 +70,6 @@ run_test "test_pg_init" "test_pg_init"
 run_test "test_pg_find_sql" "test_pg_find_sql"
 run_test "test_pg_connection" "test_pg_connection"
 run_test "test_pg_version" "test_pg_version"
+
+# 运行清理并输出汇总
+teardown

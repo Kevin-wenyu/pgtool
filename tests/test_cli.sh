@@ -57,3 +57,6 @@ echo "cli.sh 测试:"
 run_test "test_groups_defined" "test_groups_defined"
 run_test "test_group_desc" "test_group_desc"
 run_test "test_command_exists" "test_command_exists"
+
+# 运行清理并输出汇总
+teardown

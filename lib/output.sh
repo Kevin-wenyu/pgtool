@@ -232,7 +232,11 @@ pgtool_pset_args() {
             echo "--pset=format=aligned --pset=border=2 --pset=pager=off"
             ;;
         csv)
-            echo "--pset=format=csv"
+            echo "--pset=format=csv --pset=tuples_only=on"
+            ;;
+        json)
+            # PostgreSQL 18.x 不支持 json 格式，使用 unaligned 并手动转换
+            echo "--pset=format=unaligned --pset=fieldsep='|' --pset=border=0 --pset=header --pset=pager=off"
             ;;
         html)
             echo "--pset=format=html"

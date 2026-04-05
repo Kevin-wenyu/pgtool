@@ -41,9 +41,9 @@ run_test_file() {
     echo "$output"
 
     # 解析结果
-    local passed=$(echo "$output" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' || echo 0)
-    local failed=$(echo "$output" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+' || echo 0)
-    local skipped=$(echo "$output" | grep -oE '[0-9]+ skipped' | grep -oE '[0-9]+' || echo 0)
+    local passed=$(echo "$output" | grep -oE '通过: [0-9]+' | grep -oE '[0-9]+' || echo 0)
+    local failed=$(echo "$output" | grep -oE '失败: [0-9]+' | grep -oE '[0-9]+' || echo 0)
+    local skipped=$(echo "$output" | grep -oE '跳过: [0-9]+' | grep -oE '[0-9]+' || echo 0)
 
     TOTAL_PASSED=$((TOTAL_PASSED + passed))
     TOTAL_FAILED=$((TOTAL_FAILED + failed))
@@ -63,7 +63,7 @@ main() {
 
     local start_time=$(date +%s)
 
-    # 运行所有测试文件
+    # 运行所有单元测试文件
     local test_file
     for test_file in "$TEST_DIR"/test_*.sh; do
         [[ -f "$test_file" ]] || continue
@@ -71,6 +71,39 @@ main() {
 
         run_test_file "$test_file" || true
     done
+
+    # 运行集成测试（如果有数据库连接）
+    if [[ -f "$TEST_DIR/integration_test.sh" ]]; then
+        if psql -d postgres -c "SELECT 1" >/dev/null 2>&1; then
+            echo ""
+            echo "========================================"
+            echo "运行: integration_test"
+            echo "========================================"
+
+            local output
+            local exit_code=0
+
+            if output=$(bash "$TEST_DIR/integration_test.sh" 2>&1); then
+                exit_code=0
+            else
+                exit_code=$?
+            fi
+
+            echo "$output"
+
+            # 解析结果
+            local passed=$(echo "$output" | grep -oE '通过: [0-9]+' | tail -1 | grep -oE '[0-9]+' || echo 0)
+            local failed=$(echo "$output" | grep -oE '失败: [0-9]+' | tail -1 | grep -oE '[0-9]+' || echo 0)
+            local skipped=$(echo "$output" | grep -oE '跳过: [0-9]+' | tail -1 | grep -oE '[0-9]+' || echo 0)
+
+            TOTAL_PASSED=$((TOTAL_PASSED + passed))
+            TOTAL_FAILED=$((TOTAL_FAILED + failed))
+            TOTAL_SKIPPED=$((TOTAL_SKIPPED + skipped))
+        else
+            echo ""
+            echo -e "${color_yellow}跳过集成测试: 无法连接到 PostgreSQL${color_reset}"
+        fi
+    fi
 
     local end_time=$(date +%s)
     local duration=$((end_time - start_time))
@@ -103,6 +136,7 @@ if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
     echo "用法:"
     echo "  ./run.sh              运行所有测试"
     echo "  ./run.sh test_util    运行特定测试文件"
+    echo "  ./run.sh integration  运行集成测试"
     echo ""
     echo "测试文件:"
     for f in "$TEST_DIR"/test_*.sh; do
@@ -110,11 +144,22 @@ if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
         [[ "$(basename "$f")" == "test_runner.sh" ]] && continue
         echo "  - $(basename "$f" .sh)"
     done
+    echo "  - integration_test"
     exit 0
 fi
 
 # 运行特定测试
 if [[ -n "${1:-}" ]]; then
+    if [[ "$1" == "integration" ]]; then
+        if [[ -f "$TEST_DIR/integration_test.sh" ]]; then
+            bash "$TEST_DIR/integration_test.sh"
+            exit $?
+        else
+            echo "错误: 集成测试文件不存在"
+            exit 1
+        fi
+    fi
+
     test_file="$TEST_DIR/$1.sh"
     if [[ -f "$test_file" ]]; then
         bash "$test_file"

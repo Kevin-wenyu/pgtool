@@ -52,14 +52,16 @@ pgtool_stat_indexes() {
     local sql_content
     sql_content=$(cat "$sql_file")
 
-    if [[ -n "$schema" ]]; then
-        sql_content="${sql_content//WHERE schemaname NOT IN/WHERE schemaname = '$schema' AND schemaname NOT IN}"
-    fi
-
-    # 添加 table 过滤条件
-    if [[ -n "$table" ]]; then
-        # 在 WHERE 条件中添加 table 过滤
-        sql_content="${sql_content//WHERE schemaname NOT IN ('pg_catalog', 'information_schema')/WHERE schemaname NOT IN ('pg_catalog', 'information_schema')\n  AND relname = '$table'}"
+    # 添加 table 过滤条件（必须在 schema 替换之前）
+    if [[ -n "$table" && -n "$schema" ]]; then
+        # 同时指定了 schema 和 table，替换整个 WHERE 子句
+        sql_content=$(awk -v s="$schema" -v t="$table" 'NR==18 {$0="WHERE schemaname = \047"s"\047 AND relname = \047"t"\047 AND schemaname NOT IN (\047pg_catalog\047, \047information_schema\047)"} 1' <<< "$sql_content")
+    elif [[ -n "$table" ]]; then
+        # 只指定了 table，在第 18 行添加表名过滤
+        sql_content=$(awk -v t="$table" 'NR==18 {$0=$0" AND relname = \047"t"\047"} 1' <<< "$sql_content")
+    elif [[ -n "$schema" ]]; then
+        # 只指定了 schema，替换 WHERE 子句
+        sql_content=$(awk -v s="$schema" 'NR==18 {$0="WHERE schemaname = \047"s"\047 AND schemaname NOT IN (\047pg_catalog\047, \047information_schema\047)"} 1' <<< "$sql_content")
     fi
 
     local result

@@ -41,6 +41,33 @@ test_stat_help() {
     output=$("$PGTOOL_ROOT/pgtool.sh" stat --help 2>&1)
 
     assert_contains "$output" "activity"
+    assert_contains "$output" "locks"
+}
+
+test_admin_help() {
+    local output
+
+    output=$("$PGTOOL_ROOT/pgtool.sh" admin --help 2>&1)
+
+    assert_contains "$output" "checkpoint"
+    assert_contains "$output" "reload"
+}
+
+test_analyze_help() {
+    local output
+
+    output=$("$PGTOOL_ROOT/pgtool.sh" analyze --help 2>&1)
+
+    assert_contains "$output" "bloat"
+    assert_contains "$output" "slow"
+}
+
+test_plugin_help() {
+    local output
+
+    output=$("$PGTOOL_ROOT/pgtool.sh" plugin --help 2>&1)
+
+    assert_contains "$output" "list"
 }
 
 #==============================================================================
@@ -100,6 +127,12 @@ run_test "test_help_command" "test_help_command"
 run_test "test_version_command" "test_version_command"
 run_test "test_check_help" "test_check_help"
 run_test "test_stat_help" "test_stat_help"
+run_test "test_admin_help" "test_admin_help"
+run_test "test_analyze_help" "test_analyze_help"
+run_test "test_plugin_help" "test_plugin_help"
 run_test "test_commands_exist" "test_commands_exist"
 run_test "test_sql_files_exist" "test_sql_files_exist"
 run_test "test_config_file_exists" "test_config_file_exists"
+
+# 运行清理并输出汇总
+teardown

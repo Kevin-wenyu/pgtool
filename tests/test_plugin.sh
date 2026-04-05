@@ -98,3 +98,6 @@ run_test "test_example_plugin_commands" "test_example_plugin_commands"
 run_test "test_version_to_num" "test_version_to_num"
 run_test "test_version_compare" "test_version_compare"
 run_test "test_plugin_commands_registration" "test_plugin_commands_registration"
+
+# 运行清理并输出汇总
+teardown

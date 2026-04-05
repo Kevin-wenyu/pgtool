@@ -117,3 +117,6 @@ run_test "test_array_contains" "test_array_contains"
 run_test "test_array_length" "test_array_length"
 run_test "test_array_join" "test_array_join"
 run_test "test_is_readable" "test_is_readable"
+
+# 运行清理并输出汇总
+teardown
