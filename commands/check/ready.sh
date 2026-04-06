@@ -83,7 +83,7 @@ pgtool_check_ready() {
         return $EXIT_SUCCESS
     elif [[ "$status" == "STANDBY" ]]; then
         pgtool_warn "数据库处于恢复模式（备库）"
-        return 1
+        return $EXIT_GENERAL_ERROR
     else
         pgtool_error "数据库状态异常"
         return $EXIT_SQL_ERROR

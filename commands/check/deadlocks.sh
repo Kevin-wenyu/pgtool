@@ -76,7 +76,7 @@ pgtool_check_deadlocks() {
 
     if [[ $warning_count -gt 0 ]]; then
         pgtool_warn "检测到死锁活动！"
-        return 1
+        return $EXIT_GENERAL_ERROR
     fi
 
     pgtool_info "未检测到死锁问题"
