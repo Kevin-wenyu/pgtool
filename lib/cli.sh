@@ -12,7 +12,7 @@ fi
 #==============================================================================
 
 # 支持的命令组
-PGTOOL_GROUPS=("check" "stat" "admin" "analyze" "monitor" "user" "backup" "config" "plugin")
+PGTOOL_GROUPS=("check" "stat" "admin" "analyze" "monitor" "user" "backup" "config" "maintenance" "plugin")
 
 # 命令组描述（用于帮助）
 pgtool_group_desc() {
@@ -26,6 +26,7 @@ pgtool_group_desc() {
         user)    echo "用户管理 - 用户、角色和权限管理" ;;
         backup)  echo "备份管理 - 备份验证和归档检查" ;;
         config)  echo "配置管理 - 数据库参数管理与分析" ;;
+        maintenance) echo "维护管理 - VACUUM、REINDEX、ANALYZE维护操作" ;;
         plugin)  echo "插件管理 - 管理扩展插件" ;;
         *)       echo "" ;;
     esac

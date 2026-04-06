@@ -22,6 +22,7 @@ source "$PGTOOL_SCRIPT_DIR/lib/backup.sh"
 source "$PGTOOL_SCRIPT_DIR/lib/monitor.sh"
 source "$PGTOOL_SCRIPT_DIR/lib/user.sh"
 source "$PGTOOL_SCRIPT_DIR/lib/config.sh"
+source "$PGTOOL_SCRIPT_DIR/lib/maintenance.sh"
 source "$PGTOOL_SCRIPT_DIR/lib/plugin.sh"
 source "$PGTOOL_SCRIPT_DIR/lib/cli.sh"
 
