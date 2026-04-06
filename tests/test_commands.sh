@@ -96,7 +96,7 @@ test_sql_files_exist() {
     local missing=()
 
     # 检查关键 SQL 文件是否存在
-    for sql in check/xid check/connection stat/activity; do
+    for sql in check/xid check/connection stat/activity check/ready check/deadlocks check/invalid_indexes; do
         if [[ ! -f "$PGTOOL_ROOT/sql/$sql.sql" ]]; then
             missing+=("$sql")
         fi
@@ -105,6 +105,55 @@ test_sql_files_exist() {
     if [[ ${#missing[@]} -gt 0 ]]; then
         echo "缺失 SQL: ${missing[*]}" >&2
         return 1
+    fi
+}
+
+# Test new check commands exist
+test_check_ready_command_exists() {
+    if [[ -f "$PGTOOL_ROOT/commands/check/ready.sh" ]]; then
+        assert_true "0"
+    else
+        assert_true "1"
+    fi
+}
+
+test_check_deadlocks_command_exists() {
+    if [[ -f "$PGTOOL_ROOT/commands/check/deadlocks.sh" ]]; then
+        assert_true "0"
+    else
+        assert_true "1"
+    fi
+}
+
+test_check_invalid_indexes_command_exists() {
+    if [[ -f "$PGTOOL_ROOT/commands/check/invalid_indexes.sh" ]]; then
+        assert_true "0"
+    else
+        assert_true "1"
+    fi
+}
+
+test_check_ready_sql_exists() {
+    if [[ -f "$PGTOOL_ROOT/sql/check/ready.sql" ]]; then
+        assert_true "0"
+    else
+        assert_true "1"
+    fi
+}
+
+test_check_deadlocks_sql_exists() {
+    if [[ -f "$PGTOOL_ROOT/sql/check/deadlocks.sql" ]]; then
+        assert_true "0"
+    else
+        assert_true "1"
+    fi
+}
+
+test_check_invalid_indexes_sql_exists() {
+    if [[ -f "$PGTOOL_ROOT/sql/check/invalid_indexes.sql" ]]; then
+        assert_true "0"
+    else
+        assert_true "1"
     fi
 }
 
@@ -133,6 +182,12 @@ run_test "test_plugin_help" "test_plugin_help"
 run_test "test_commands_exist" "test_commands_exist"
 run_test "test_sql_files_exist" "test_sql_files_exist"
 run_test "test_config_file_exists" "test_config_file_exists"
+run_test "test_check_ready_command_exists" "test_check_ready_command_exists"
+run_test "test_check_deadlocks_command_exists" "test_check_deadlocks_command_exists"
+run_test "test_check_invalid_indexes_command_exists" "test_check_invalid_indexes_command_exists"
+run_test "test_check_ready_sql_exists" "test_check_ready_sql_exists"
+run_test "test_check_deadlocks_sql_exists" "test_check_deadlocks_sql_exists"
+run_test "test_check_invalid_indexes_sql_exists" "test_check_invalid_indexes_sql_exists"
 
 # 运行清理并输出汇总
 teardown
