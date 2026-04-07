@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.0] - 2026-04-07
+
+### 新增命令（10个）
+- **check**: constraints, sequences, orphans, ssl
+- **stat**: sequences, functions
+- **admin**: rotate-log
+- **analyze**: index-usage
+- **monitor**: top
+- **config**: validate
+
+### 统计
+- 总计 29 个命令（原 19 个 + 新增 10 个）
+- 66 个测试全部通过
+
 ## [0.1.0] - 2026-04-01
 
 ### 初始版本
