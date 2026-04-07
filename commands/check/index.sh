@@ -2,7 +2,7 @@
 # commands/check/index.sh - check 命令组索引
 
 # 命令列表: "命令名:描述"
-PGTOOL_CHECK_COMMANDS="xid:检查事务ID年龄,replication:检查流复制状态,autovacuum:检查autovacuum状态,connection:检查连接数,cache-hit:检查缓存命中率,long-tx:检查长事务,tablespace:检查表空间使用,replication-lag:检查复制延迟,ready:就绪状态检查,deadlocks:死锁检查,invalid-indexes:无效索引检查,constraints:检查约束状态,sequences:检查序列使用情况,orphans:检查孤儿对象"
+PGTOOL_CHECK_COMMANDS="xid:检查事务ID年龄,replication:检查流复制状态,autovacuum:检查autovacuum状态,connection:检查连接数,cache-hit:检查缓存命中率,long-tx:检查长事务,tablespace:检查表空间使用,replication-lag:检查复制延迟,ready:就绪状态检查,deadlocks:死锁检查,invalid-indexes:无效索引检查,constraints:检查约束状态,sequences:检查序列使用情况,orphans:检查孤儿对象,ssl:检查SSL配置"
 
 # 显示帮助
 pgtool_check_help() {
@@ -24,6 +24,7 @@ pgtool_check_help() {
   constraints     检查约束状态
   sequences       检查序列使用情况
   orphans         检查孤儿对象
+  ssl             检查SSL配置
 
 选项:
   -h, --help    显示帮助
