@@ -1,32 +1,17 @@
 #!/bin/bash
 # commands/check/constraints.sh - Check for constraint violations
 
-# Default thresholds
-PGTOOL_CONSTRAINTS_CHECK_FK="${PGTOOL_CONSTRAINTS_CHECK_FK:-yes}"
-
 #==============================================================================
 # Main Function
 #==============================================================================
 
 pgtool_check_constraints() {
-    local -a opts=()
-    local -a args=()
-    local check_fk="yes"
-
     # Parse parameters
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -h|--help)
                 pgtool_check_constraints_help
                 return 0
-                ;;
-            --no-fk-check)
-                check_fk="no"
-                shift
-                ;;
-            -*)
-                opts+=("$1")
-                shift
                 ;;
             --format)
                 shift
@@ -37,8 +22,10 @@ pgtool_check_constraints() {
                 shift
                 shift
                 ;;
+            -*)
+                shift
+                ;;
             *)
-                args+=("$1")
                 shift
                 ;;
         esac
@@ -100,10 +87,8 @@ pgtool_check_constraints_help() {
 
 选项:
   -h, --help          显示帮助
-  --no-fk-check       跳过外键约束检查
 
 示例:
   pgtool check constraints
-  pgtool check constraints --no-fk-check
 EOF
 }
