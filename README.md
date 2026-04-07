@@ -7,7 +7,7 @@
 - **kubectl 风格**：熟悉的命令行体验
 - **模块化设计**：易于扩展的命令系统
 - **插件支持**：可自定义扩展功能
-- **19+ 命令**：覆盖日常运维场景
+- **29+ 命令**：覆盖日常运维场景
 - **安全优先**：只读检查类命令默认安全
 
 ## 快速安装
@@ -54,20 +54,33 @@ pgtool admin reload --force
 | | replication | 检查流复制状态 |
 | | autovacuum | 检查 autovacuum 状态 |
 | | connection | 检查连接数使用 |
+| | constraints | 检查数据库约束状态 |
+| | sequences | 检查序列使用情况 |
+| | orphans | 检查孤儿对象 |
+| | ssl | 检查SSL配置 |
+| | ready | 检查数据库就绪状态 |
+| | deadlocks | 检查死锁统计 |
+| | invalid-indexes | 检查无效索引 |
 | **stat** | activity | 查看活动会话 |
 | | locks | 查看锁等待 |
 | | database | 数据库级统计 |
 | | table | 表级统计 |
 | | indexes | 索引使用情况 |
+| | sequences | 序列统计信息 |
+| | functions | 函数调用统计 |
 | **admin** | kill-blocking | 终止阻塞会话 |
 | | cancel-query | 取消查询 |
 | | checkpoint | 触发检查点 |
 | | reload | 重载配置 |
+| | rotate-log | 轮换日志文件 |
 | **analyze** | bloat | 分析表膨胀 |
 | | missing-indexes | 查找缺失索引 |
 | | slow-queries | 分析慢查询 |
 | | vacuum-stats | vacuum 统计 |
+| | index-usage | 索引使用分析 |
 | **plugin** | list | 列出插件 |
+| **monitor** | top | 实时活动监控 |
+| **config** | validate | 验证配置 |
 
 ## 配置
 
