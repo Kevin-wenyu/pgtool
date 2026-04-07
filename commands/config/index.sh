@@ -2,7 +2,7 @@
 # commands/config/index.sh - config 命令组索引
 
 # 命令列表: "命令名:描述"
-PGTOOL_CONFIG_COMMANDS="analyze:分析配置并提供建议,diff:比较配置差异,get:获取参数值,set:生成设置命令,reset:显示重置命令,export:导出配置"
+PGTOOL_CONFIG_COMMANDS="analyze:分析配置并提供建议,diff:比较配置差异,get:获取参数值,set:生成设置命令,reset:显示重置命令,export:导出配置,validate:验证配置"
 
 # 显示帮助
 pgtool_config_help() {
@@ -16,6 +16,7 @@ pgtool_config_help() {
   set           生成ALTER SYSTEM设置命令（需--dry-run）
   reset         生成参数重置命令（需--dry-run）
   export        导出配置为指定格式
+  validate      验证配置参数是否符合最佳实践
 
 选项:
   -h, --help          显示帮助

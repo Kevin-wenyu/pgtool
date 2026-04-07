@@ -1,7 +1,7 @@
 #!/bin/bash
 # commands/admin/index.sh - admin 命令组索引
 
-PGTOOL_ADMIN_COMMANDS="kill-blocking:终止阻塞会话,cancel-query:取消查询,checkpoint:触发检查点,reload:重载配置"
+PGTOOL_ADMIN_COMMANDS="kill-blocking:终止阻塞会话,cancel-query:取消查询,checkpoint:触发检查点,reload:重载配置,rotate-log:轮换日志文件"
 
 pgtool_admin_help() {
     cat <<EOF
@@ -14,6 +14,7 @@ pgtool_admin_help() {
   cancel-query    取消正在执行的查询
   checkpoint      触发检查点
   reload          重载配置文件
+  rotate-log      轮换日志文件
 
 选项:
   -h, --help      显示帮助
@@ -25,6 +26,7 @@ pgtool_admin_help() {
   pgtool admin kill-blocking --pid=12345
   pgtool admin cancel-query --pid=12345 --force
   pgtool admin checkpoint
+  pgtool admin rotate-log
 
 警告:
   kill-blocking 和 cancel-query 会终止/取消正在执行的查询，

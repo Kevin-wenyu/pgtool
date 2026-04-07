@@ -2,7 +2,7 @@
 # commands/monitor/index.sh - monitor 命令组索引
 
 # 命令列表: "命令名:描述"
-PGTOOL_MONITOR_COMMANDS="queries:实时监控活跃查询,connections:实时监控连接数,replication:实时监控复制延迟"
+PGTOOL_MONITOR_COMMANDS="queries:实时监控活跃查询,connections:实时监控连接数,replication:实时监控复制延迟,top:实时活动监控"
 
 # 显示帮助
 pgtool_monitor_help() {
@@ -12,7 +12,7 @@ pgtool_monitor_help() {
 可用命令:
   queries       实时监控活跃查询，显示执行时间、SQL语句等
   connections   实时监控连接数变化
-  replication   实时监控主从复制延迟
+  top           实时活动监控，显示PID、用户、数据库、状态、持续时间
 
 选项:
   -h, --help       显示帮助
@@ -27,8 +27,10 @@ pgtool_monitor_help() {
   pgtool monitor queries -i 1 -l 10
   pgtool monitor connections --once
   pgtool monitor replication -i 5
+  pgtool monitor top
+  pgtool monitor top -l 20
 
 交互模式:
-  实时监控运行时，按 'q' 键退出
+  实时监控运行时，按 'q' 键退出，'p' 键暂停/继续
 EOF
 }
