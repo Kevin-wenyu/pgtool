@@ -1,65 +1,31 @@
--- Check for foreign key violations and constraint issues
--- Parameters: none
--- Output: constraint_type, table_name, constraint_name, details, status
+-- sql/check/constraints.sql
+-- 列出数据库中的所有约束
+-- 参数：无
+-- 输出：模式、表名、约束名、约束类型、定义
 
--- Check for FK violations using pg_constraint and manual verification
-WITH fk_check AS (
-    SELECT
-        tc.table_schema,
-        tc.table_name,
-        tc.constraint_name,
-        kcu.column_name AS fk_column,
-        ccu.table_name AS ref_table,
-        ccu.column_name AS ref_column
-    FROM information_schema.table_constraints tc
-    JOIN information_schema.key_column_usage kcu
-        ON tc.constraint_name = kcu.constraint_name
-        AND tc.table_schema = kcu.table_schema
-    JOIN information_schema.constraint_column_usage ccu
-        ON ccu.constraint_name = tc.constraint_name
-        AND ccu.table_schema = tc.table_schema
-    WHERE tc.constraint_type = 'FOREIGN KEY'
-        AND tc.table_schema NOT IN ('pg_catalog', 'information_schema')
-),
--- Check for NOT NULL violations (rows where column is null but has NOT NULL constraint)
-notnull_check AS (
-    SELECT
-        tc.table_schema,
-        tc.table_name,
-        tc.constraint_name,
-        kcu.column_name AS column_name,
-        'NOT NULL constraint potentially violated' AS details
-    FROM information_schema.table_constraints tc
-    JOIN information_schema.constraint_column_usage kcu
-        ON tc.constraint_name = kcu.constraint_name
-        AND tc.table_schema = kcu.table_schema
-    WHERE tc.constraint_type = 'CHECK'
-        AND tc.table_schema NOT IN ('pg_catalog', 'information_schema')
-        AND tc.constraint_name LIKE '%not_null%'
-),
--- Check for CHECK constraint definitions
-all_constraints AS (
-    SELECT
-        conrelid::regclass AS table_name,
-        conname AS constraint_name,
-        contype AS constraint_type,
-        pg_get_constraintdef(oid) AS constraint_definition,
-        CASE contype
-            WHEN 'c' THEN 'CHECK'
-            WHEN 'f' THEN 'FOREIGN KEY'
-            WHEN 'p' THEN 'PRIMARY KEY'
-            WHEN 'u' THEN 'UNIQUE'
-            WHEN 't' THEN 'TRIGGER'
-            WHEN 'x' THEN 'EXCLUSION'
-        END AS constraint_type_name
-    FROM pg_constraint
-    WHERE connamespace NOT IN ('pg_catalog'::regnamespace, 'information_schema'::regnamespace)
-)
 SELECT
-    constraint_type_name AS constraint_type,
-    table_name::text,
-    constraint_name,
-    constraint_definition AS details,
-    'OK' AS status
-FROM all_constraints
-ORDER BY constraint_type_name, table_name, constraint_name;
+    n.nspname AS "模式",
+    c.relname AS "表名",
+    con.conname AS "约束名",
+    CASE con.contype
+        WHEN 'c' THEN 'CHECK'
+        WHEN 'f' THEN '外键'
+        WHEN 'p' THEN '主键'
+        WHEN 'u' THEN '唯一约束'
+        WHEN 't' THEN '触发器'
+        WHEN 'x' THEN '排他约束'
+    END AS "约束类型",
+    pg_get_constraintdef(con.oid) AS "定义"
+FROM pg_constraint con
+JOIN pg_class c ON c.oid = con.conrelid
+JOIN pg_namespace n ON n.oid = con.connamespace
+WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
+ORDER BY n.nspname, c.relname,
+    CASE con.contype
+        WHEN 'p' THEN 1
+        WHEN 'u' THEN 2
+        WHEN 'f' THEN 3
+        WHEN 'c' THEN 4
+        WHEN 'x' THEN 5
+        WHEN 't' THEN 6
+    END, con.conname;
