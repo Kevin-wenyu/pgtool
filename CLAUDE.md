@@ -13,8 +13,8 @@ pgtool is a PostgreSQL CLI toolkit inspired by kubectl. It's a bash-based tool p
 ```
 pgtool/
 ├── pgtool.sh              # Main entry point - parses global options, loads libs, dispatches commands
-├── lib/                   # Core library modules (sourced by pgtool.sh)
-│   ├── core.sh           # Constants, exit codes, initialization
+├── lib/                   # Core library modules (loaded in specific order by pgtool.sh)
+│   ├── core.sh           # Constants, exit codes, initialization (loaded first)
 │   ├── cli.sh            # Command dispatcher, global option parsing
 │   ├── log.sh            # Logging utilities (pgtool_info, pgtool_warn, pgtool_error, pgtool_fatal)
 │   ├── pg.sh             # PostgreSQL connection management, SQL execution
@@ -22,8 +22,8 @@ pgtool/
 │   ├── util.sh           # General utility functions
 │   └── plugin.sh         # Plugin loader
 ├── commands/              # Built-in command implementations
-│   ├── check/            # Health check commands (xid, replication, autovacuum, connection)
-│   ├── stat/             # Statistics commands (activity, locks, database, table, indexes)
+│   ├── check/            # Health check commands (xid, replication, autovacuum, connection, cache-hit, long-tx, tablespace, replication-lag, ready, deadlocks, invalid-indexes)
+│   ├── stat/             # Statistics commands (activity, locks, database, table, indexes, waits)
 │   ├── admin/            # Administrative commands (kill-blocking, cancel-query, checkpoint, reload)
 │   ├── analyze/          # Analysis commands (bloat, missing-indexes, slow-queries, vacuum-stats)
 │   └── plugin/           # Plugin management commands
@@ -39,18 +39,28 @@ pgtool/
 
 ### Command Execution Flow
 
-1. **pgtool.sh** parses global options (`--config`, `--format`, `--timeout`, connection params)
+1. **pgtool.sh** parses global options (`--config`, `--format`, `--timeout`, connection params like `--host`, `--port`)
 2. **lib/cli.sh** `pgtool_dispatch()` identifies command group and command
 3. Load command group index from `commands/<group>/index.sh`
 4. Load specific command from `commands/<group>/<command>.sh`
-5. Execute `pgtool_<group>_<command>()` function
+5. Execute `pgtool_<group>_<command>()` function with remaining args (global options already filtered out)
 
 ### Key Architectural Patterns
 
 - **Command Registration**: Each command group has an `index.sh` that defines `PGTOOL_<GROUP>_COMMANDS` variable (comma-separated list of `command:description`)
 - **SQL Separation**: SQL files live in `sql/<group>/<command>.sql`, loaded via `pgtool_pg_find_sql()` and executed via `pgtool_exec_sql_file()`
+- **SQL Execution**: Commands use `pgtool_pset_args "${PGTOOL_FORMAT}"` to get psql `--pset` arguments for formatting
 - **Plugin System**: External plugins in `plugins/<name>/` with `plugin.conf` and `commands/` subdirectory
-- **Exit Codes**: Defined in `lib/core.sh` - SUCCESS=0, GENERAL_ERROR=1, INVALID_ARGS=2, CONNECTION_ERROR=3, TIMEOUT=4, SQL_ERROR=5, NOT_FOUND=6, PERMISSION=7
+- **Exit Codes**: Defined in `lib/core.sh`:
+  - `EXIT_SUCCESS=0`
+  - `EXIT_GENERAL_ERROR=1`
+  - `EXIT_INVALID_ARGS=2`
+  - `EXIT_CONNECTION_ERROR=3`
+  - `EXIT_TIMEOUT=4`
+  - `EXIT_SQL_ERROR=5`
+  - `EXIT_NOT_FOUND=6`
+  - `EXIT_PERMISSION=7`
+  - `EXIT_INTERRUPT=130` (Ctrl+C)
 
 ## Common Commands
 
