@@ -3,6 +3,7 @@
 
 pgtool_admin_rotate_log() {
     local force=0
+    local dry_run=0
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -12,6 +13,10 @@ pgtool_admin_rotate_log() {
                 ;;
             --force)
                 force=1
+                shift
+                ;;
+            --dry-run)
+                dry_run=1
                 shift
                 ;;
             *)
@@ -24,12 +29,26 @@ pgtool_admin_rotate_log() {
         return $EXIT_CONNECTION_ERROR
     fi
 
+    # 权限检查：pg_rotate_logfile 需要超级用户或 pg_signal_backend 角色
+    if ! pgtool_pg_is_superuser && ! pgtool_pg_has_role "pg_signal_backend"; then
+        pgtool_error "权限不足: 日志轮换需要超级用户或 pg_signal_backend 角色"
+        pgtool_info "当前用户: $PGTOOL_USER"
+        return $EXIT_PERMISSION
+    fi
+
+    if [[ "$dry_run" -eq 1 ]]; then
+        pgtool_info "试运行模式: 将调用 pg_rotate_logfile() 轮换日志文件"
+        return 0
+    fi
+
     if [[ "$force" -eq 0 ]]; then
         if ! confirm "确定要立即轮换日志文件吗"; then
             pgtool_info "操作已取消"
             return 0
         fi
     fi
+
+    pgtool_audit_admin "rotate-log" "manual-trigger"
 
     pgtool_info "正在轮换日志文件..."
 
@@ -66,10 +85,12 @@ pgtool_admin_rotate_log_help() {
 选项:
   -h, --help     显示帮助
       --force    跳过确认提示
+      --dry-run  试运行模式：显示将要执行的操作，不实际执行
 
 示例:
   pgtool admin rotate-log
   pgtool admin rotate-log --force
+  pgtool admin rotate-log --dry-run
 
 说明:
   此命令调用 pg_rotate_logfile() 函数来轮换日志文件。
