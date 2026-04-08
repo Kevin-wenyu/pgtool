@@ -102,13 +102,9 @@ pgtool_admin_kill_blocking() {
             fi
         fi
 
-        if [[ -n "$target_pid" ]]; then
         pgtool_audit_admin "kill-blocking" "--pid=$target_pid"
-    else
-        pgtool_audit_admin "kill-blocking" "all-blocking-sessions"
-    fi
 
-    pgtool_info "正在终止 PID $target_pid..."
+        pgtool_info "正在终止 PID $target_pid..."
         local cancel_result
         cancel_result=$(timeout "$PGTOOL_TIMEOUT" psql \
             "${PGTOOL_CONN_OPTS[@]}" \
@@ -133,6 +129,8 @@ pgtool_admin_kill_blocking() {
         fi
     fi
 
+    pgtool_audit_admin "kill-blocking" "bulk-termination-start"
+
     local killed=0
     local failed=0
     local pid
@@ -148,6 +146,8 @@ pgtool_admin_kill_blocking() {
             pgtool_error "终止 PID $pid 失败"
         fi
     done
+
+    pgtool_audit_admin "kill-blocking" "bulk-termination-complete: $killed success, $failed failed"
 
     echo ""
     pgtool_info "终止完成: $killed 成功, $failed 失败"
