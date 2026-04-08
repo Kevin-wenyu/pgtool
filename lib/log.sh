@@ -188,3 +188,63 @@ pgtool_fail() {
 pgtool_warning() {
     pgtool_yellow "⚠ $*"
 }
+
+#==============================================================================
+# 审计日志
+#==============================================================================
+
+# 审计日志文件路径（可通过环境变量配置）
+PGTOOL_AUDIT_LOG="${PGTOOL_AUDIT_LOG:-}"
+
+# 设置审计日志文件
+pgtool_audit_set_file() {
+    local log_file="$1"
+    if [[ -n "$log_file" ]]; then
+        local log_dir
+        log_dir=$(dirname "$log_file")
+        if [[ ! -d "$log_dir" ]]; then
+            mkdir -p "$log_dir" 2>/dev/null || {
+                pgtool_error "无法创建审计日志目录: $log_dir"
+                return 1
+            }
+        fi
+        if [[ -f "$log_file" && ! -w "$log_file" ]]; then
+            pgtool_error "审计日志文件不可写: $log_file"
+            return 1
+        fi
+        PGTOOL_AUDIT_LOG="$log_file"
+    fi
+}
+
+# 记录审计日志
+pgtool_audit_log() {
+    local action="$1"
+    local details="${2:-}"
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local user_info="${USER:-unknown}@${HOSTNAME:-unknown}"
+    local db_info="${PGTOOL_HOST:-}:${PGTOOL_PORT:-}/${PGTOOL_DATABASE:-}"
+
+    local log_entry="[$timestamp] [AUDIT] user=$user_info db=$db_info action=$action"
+    if [[ -n "$details" ]]; then
+        log_entry="$log_entry details=$details"
+    fi
+
+    # 输出到控制台
+    pgtool_log "INFO" "[AUDIT] $action"
+
+    # 写入审计日志文件（如果配置了）
+    if [[ -n "$PGTOOL_AUDIT_LOG" ]]; then
+        echo "$log_entry" >> "$PGTOOL_AUDIT_LOG" 2>/dev/null || {
+            pgtool_warn "无法写入审计日志: $PGTOOL_AUDIT_LOG"
+        }
+    fi
+}
+
+# 记录危险操作审计日志
+pgtool_audit_admin() {
+    local command="$1"
+    shift
+    local args="$*"
+    pgtool_audit_log "ADMIN_COMMAND" "command=$command args=$args"
+}
