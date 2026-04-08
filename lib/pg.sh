@@ -91,6 +91,48 @@ pgtool_pg_is_superuser() {
     [[ "$result" == "t" ]] || [[ "$result" == "true" ]]
 }
 
+# 获取 PostgreSQL 主版本号 (例如 12, 13, 14, 15, 16, 17)
+pgtool_pg_version_num() {
+    local version
+    version=$(timeout "$PGTOOL_TIMEOUT" psql \
+        "${PGTOOL_CONN_OPTS[@]}" \
+        --command="SELECT current_setting('server_version_num')::int / 10000" \
+        --tuples-only \
+        --quiet 2>/dev/null | tr -d ' ')
+
+    if [[ -z "$version" ]] || ! [[ "$version" =~ ^[0-9]+$ ]]; then
+        return 1
+    fi
+
+    echo "$version"
+}
+
+# 检查 PostgreSQL 版本是否至少为指定版本
+pgtool_pg_version_check() {
+    local min_version="$1"
+    local current_version
+
+    current_version=$(pgtool_pg_version_num)
+    if [[ $? -ne 0 ]]; then
+        return 1
+    fi
+
+    [[ "$current_version" -ge "$min_version" ]]
+}
+
+# 检查是否为特定权限角色的成员
+pgtool_pg_has_role() {
+    local role="$1"
+    local result
+    result=$(timeout "$PGTOOL_TIMEOUT" psql \
+        "${PGTOOL_CONN_OPTS[@]}" \
+        --command="SELECT pg_catalog.pg_has_role(current_user, '$role', 'MEMBER')" \
+        --tuples-only \
+        --quiet 2>/dev/null | tr -d ' ')
+
+    [[ "$result" == "t" ]] || [[ "$result" == "true" ]]
+}
+
 #==============================================================================
 # SQL 执行
 #==============================================================================
