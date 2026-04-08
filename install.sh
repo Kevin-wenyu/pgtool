@@ -4,7 +4,7 @@
 set -euo pipefail
 
 # 版本
-PGTOOL_VERSION="0.1.0"
+PGTOOL_VERSION="0.3.0"
 
 # 安装路径
 INSTALL_PREFIX="${PREFIX:-/usr/local}"

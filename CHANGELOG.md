@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0] - 2026-04-08
+
+### 新功能
+- 为 admin 命令添加权限检查（需要超级用户权限）
+- 添加 `--dry-run` 试运行选项到 kill-blocking, checkpoint, rotate-log 命令
+- 添加审计日志支持 (pgtool_audit_admin)
+- 添加 PostgreSQL 版本检测函数 (pgtool_pg_version_num)
+- 添加角色检查函数 (pgtool_pg_is_superuser, pgtool_pg_is_replication_role)
+
+### 修复
+- 更新 hooks 配置到新版 Claude Code 格式
+
+### 统计
+- 6 个新功能提交
+- admin 命令组增强安全性和可用性
+
 ## [0.2.0] - 2026-04-07
 
 ### 新增命令（10个）
