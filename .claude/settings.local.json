@@ -56,20 +56,33 @@
   "hooks": {
     "PreToolUse": [
       {
-        "tool": "Bash",
-        "pattern": "(sudo|su -|rm -rf /|curl.*\\|.*sh|wget.*\\|.*sh|eval\\s*\\(|exec\\s*\\(|system\\s*\\(|fork\\s*\\()",
-        "message": "🚨 SECURITY WARNING: Potentially dangerous command detected. Review before proceeding."
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '🚨 SECURITY WARNING: Potentially dangerous command detected. Review before proceeding.'"
+          }
+        ]
       },
       {
-        "tool": "Write",
-        "pattern": "(\\.ssh/|\\.aws/|\\.pgpass|id_rsa|private_key|password|secret|token)",
-        "message": "⚠️  Potential secret or sensitive file write detected."
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '⚠️  Potential secret or sensitive file write detected.'"
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "command": "git diff --name-only",
-        "message": "📋 Session ending. Uncommitted changes (if any) listed above."
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git diff --name-only && echo '📋 Session ending. Uncommitted changes (if any) listed above.'"
+          }
+        ]
       }
     ]
   }
