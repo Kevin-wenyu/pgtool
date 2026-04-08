@@ -4,6 +4,7 @@
 pgtool_admin_kill_blocking() {
     local force=0
     local target_pid=""
+    local dry_run=0
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -13,6 +14,10 @@ pgtool_admin_kill_blocking() {
                 ;;
             --force)
                 force=1
+                shift
+                ;;
+            --dry-run)
+                dry_run=1
                 shift
                 ;;
             --pid)
@@ -28,6 +33,13 @@ pgtool_admin_kill_blocking() {
 
     if ! pgtool_pg_test_connection >/dev/null 2>&1; then
         return $EXIT_CONNECTION_ERROR
+    fi
+
+    # 权限检查：需要超级用户或 pg_signal_backend 角色
+    if ! pgtool_pg_is_superuser && ! pgtool_pg_has_role "pg_signal_backend"; then
+        pgtool_error "权限不足: 需要超级用户或 pg_signal_backend 角色才能终止会话"
+        pgtool_info "当前用户: $PGTOOL_USER"
+        return $EXIT_PERMISSION
     fi
 
     # 查找阻塞进程
@@ -68,6 +80,13 @@ pgtool_admin_kill_blocking() {
     echo ""
     echo "$result"
 
+    # 试运行模式
+    if [[ "$dry_run" -eq 1 ]]; then
+        pgtool_info "试运行模式: 以下会话将被终止:"
+        echo "$result" | grep -E '^\|' | grep -v 'pid' | awk -F'|' '{print "  - PID:" $2 " 用户:" $3 " 数据库:" $4}'
+        return 0
+    fi
+
     # 如果指定了 PID，只终止那个
     if [[ -n "$target_pid" ]]; then
         if ! echo "$result" | grep -q "^| *$target_pid "; then
@@ -83,7 +102,13 @@ pgtool_admin_kill_blocking() {
             fi
         fi
 
-        pgtool_info "正在终止 PID $target_pid..."
+        if [[ -n "$target_pid" ]]; then
+        pgtool_audit_admin "kill-blocking" "--pid=$target_pid"
+    else
+        pgtool_audit_admin "kill-blocking" "all-blocking-sessions"
+    fi
+
+    pgtool_info "正在终止 PID $target_pid..."
         local cancel_result
         cancel_result=$(timeout "$PGTOOL_TIMEOUT" psql \
             "${PGTOOL_CONN_OPTS[@]}" \
@@ -140,11 +165,13 @@ pgtool_admin_kill_blocking_help() {
 选项:
   -h, --help        显示帮助
       --force       跳过确认提示
+      --dry-run     试运行模式：只显示将要终止的会话，不实际执行
       --pid N       只终止指定 PID
 
 示例:
   pgtool admin kill-blocking          # 终止所有阻塞会话
   pgtool admin kill-blocking --force  # 不确认直接终止
+  pgtool admin kill-blocking --dry-run # 试运行，只查看不终止
   pgtool admin kill-blocking --pid=12345
 
 ⚠️ 警告:
