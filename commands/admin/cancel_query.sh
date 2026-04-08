@@ -41,6 +41,13 @@ pgtool_admin_cancel_query() {
         return $EXIT_CONNECTION_ERROR
     fi
 
+    # 权限检查：需要超级用户或 pg_signal_backend 角色
+    if ! pgtool_pg_is_superuser && ! pgtool_pg_has_role "pg_signal_backend"; then
+        pgtool_error "权限不足: 需要超级用户或 pg_signal_backend 角色才能取消查询"
+        pgtool_info "当前用户: $PGTOOL_USER"
+        return $EXIT_PERMISSION
+    fi
+
     # 查询进程信息
     local query_info
     query_info=$(timeout "$PGTOOL_TIMEOUT" psql \
@@ -71,6 +78,8 @@ pgtool_admin_cancel_query() {
             return 0
         fi
     fi
+
+    pgtool_audit_admin "cancel-query" "--pid=$target_pid"
 
     pgtool_info "正在取消 PID $target_pid 的查询..."
     local result

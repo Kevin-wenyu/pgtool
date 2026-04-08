@@ -24,6 +24,13 @@ pgtool_admin_reload() {
         return $EXIT_CONNECTION_ERROR
     fi
 
+    # 权限检查：pg_reload_conf 需要超级用户
+    if ! pgtool_pg_is_superuser; then
+        pgtool_error "权限不足: 配置重载需要超级用户权限"
+        pgtool_info "当前用户: $PGTOOL_USER"
+        return $EXIT_PERMISSION
+    fi
+
     # 显示一些可重载的配置参数
     local reloadable
     reloadable=$(timeout "$PGTOOL_TIMEOUT" psql \
@@ -44,6 +51,8 @@ pgtool_admin_reload() {
             return 0
         fi
     fi
+
+    pgtool_audit_admin "reload" "config-reload"
 
     pgtool_info "正在重载配置..."
     local result
