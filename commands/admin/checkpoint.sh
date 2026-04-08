@@ -3,6 +3,7 @@
 
 pgtool_admin_checkpoint() {
     local force=0
+    local dry_run=0
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -14,6 +15,10 @@ pgtool_admin_checkpoint() {
                 force=1
                 shift
                 ;;
+            --dry-run)
+                dry_run=1
+                shift
+                ;;
             *)
                 shift
                 ;;
@@ -22,6 +27,13 @@ pgtool_admin_checkpoint() {
 
     if ! pgtool_pg_test_connection >/dev/null 2>&1; then
         return $EXIT_CONNECTION_ERROR
+    fi
+
+    # 权限检查：CHECKPOINT 需要超级用户
+    if ! pgtool_pg_is_superuser; then
+        pgtool_error "权限不足: CHECKPOINT 命令需要超级用户权限"
+        pgtool_info "当前用户: $PGTOOL_USER"
+        return $EXIT_PERMISSION
     fi
 
     # 获取检查点统计（兼容不同版本）
@@ -35,12 +47,22 @@ pgtool_admin_checkpoint() {
         pgtool_warn "无法获取检查点统计"
     fi
 
+    if [[ "$dry_run" -eq 1 ]]; then
+        pgtool_info "试运行模式: 将执行 CHECKPOINT 命令"
+        pgtool_info "当前检查点统计:"
+        echo "  定时检查点: $(echo "$stats" | cut -d'|' -f1 2>/dev/null || echo "N/A")"
+        echo "  请求检查点: $(echo "$stats" | cut -d'|' -f2 2>/dev/null || echo "N/A")"
+        return 0
+    fi
+
     if [[ "$force" -eq 0 ]]; then
         if ! confirm "确定要立即触发检查点吗"; then
             pgtool_info "操作已取消"
             return 0
         fi
     fi
+
+    pgtool_audit_admin "checkpoint" "manual-trigger"
 
     pgtool_info "正在触发检查点..."
     local result
@@ -81,10 +103,12 @@ pgtool_admin_checkpoint_help() {
 选项:
   -h, --help     显示帮助
       --force    跳过确认提示
+      --dry-run  试运行模式：显示将要执行的操作，不实际执行
 
 示例:
   pgtool admin checkpoint
   pgtool admin checkpoint --force
+  pgtool admin checkpoint --dry-run
 
 说明:
   检查点会将共享缓冲区中的脏页刷新到磁盘，
