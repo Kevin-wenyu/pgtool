@@ -47,10 +47,10 @@
 ## ⏳ 未完成
 
 ### 待办事项
-- [ ] `.claude/settings.local.json` 修改未提交
-- [ ] `config validate` 命令的 --dry-run 支持
-- [ ] `admin cancel-query` 的 --dry-run 支持
-- [ ] `admin reload` 的 --dry-run 支持
+- [ ] `.claude/settings.local.json` 修改未提交 (已提交)
+- [x] `admin cancel-query` 的 --dry-run 支持
+- [x] `admin reload` 的 --dry-run 支持
+- [ ] `config validate` 命令的 --dry-run 支持 (不需要，只读命令)
 
 ### 可选增强
 - [ ] 添加更多集成测试（需要 PostgreSQL 连接）
