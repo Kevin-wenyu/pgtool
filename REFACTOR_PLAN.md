@@ -112,8 +112,7 @@ pgtool_audit_admin "command-name" "details"
 ## Known Issues
 
 ### Minor
-- `.claude/settings.local.json` has uncommitted changes
-- Some admin commands lack --dry-run (cancel-query, reload)
+- Some admin commands lack --dry-run (config validate - not needed, read-only)
 
 ### Testing Gaps
 - Integration tests require live PostgreSQL (skipped in CI)
@@ -124,9 +123,9 @@ pgtool_audit_admin "command-name" "details"
 ## Recommendations
 
 ### Short Term (1-2 weeks)
-1. **Complete --dry-run coverage**
-   - Add to `cancel-query`
-   - Add to `reload`
+1. **Complete --dry-run coverage** ✅ DONE
+   - Add to `cancel-query` ✅
+   - Add to `reload` ✅
 
 2. **Documentation**
    - Add security guide
