@@ -3,6 +3,7 @@
 
 pgtool_admin_reload() {
     local force=0
+    local dry_run=0
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -12,6 +13,10 @@ pgtool_admin_reload() {
                 ;;
             --force)
                 force=1
+                shift
+                ;;
+            --dry-run)
+                dry_run=1
                 shift
                 ;;
             *)
@@ -44,6 +49,12 @@ pgtool_admin_reload() {
     echo "$reloadable"
     echo "..."
     echo ""
+
+    # 试运行模式
+    if [[ "$dry_run" -eq 1 ]]; then
+        pgtool_info "试运行模式: 配置文件将被重载"
+        return 0
+    fi
 
     if [[ "$force" -eq 0 ]]; then
         if ! confirm "确定要重载配置文件吗"; then
@@ -98,10 +109,12 @@ pgtool_admin_reload_help() {
 选项:
   -h, --help     显示帮助
       --force    跳过确认提示
+      --dry-run  试运行模式：只显示将要重载的配置，不实际执行
 
 示例:
   pgtool admin reload
   pgtool admin reload --force
+  pgtool admin reload --dry-run
 
 可重载的参数包括:
   - max_connections

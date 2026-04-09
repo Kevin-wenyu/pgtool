@@ -4,6 +4,7 @@
 pgtool_admin_cancel_query() {
     local force=0
     local target_pid=""
+    local dry_run=0
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -13,6 +14,10 @@ pgtool_admin_cancel_query() {
                 ;;
             --force)
                 force=1
+                shift
+                ;;
+            --dry-run)
+                dry_run=1
                 shift
                 ;;
             --pid)
@@ -71,6 +76,12 @@ pgtool_admin_cancel_query() {
     echo ""
     echo "$query_info"
 
+    # 试运行模式
+    if [[ "$dry_run" -eq 1 ]]; then
+        pgtool_info "试运行模式: 将要取消以下查询 (PID: $target_pid)"
+        return 0
+    fi
+
     if [[ "$force" -eq 0 ]]; then
         echo ""
         if ! confirm "确定要取消 PID $target_pid 的查询吗"; then
@@ -114,11 +125,13 @@ pgtool_admin_cancel_query_help() {
 选项:
   -h, --help        显示帮助
       --force       跳过确认提示
+      --dry-run     试运行模式：只显示将要取消的查询，不实际执行
       --pid N       要取消的进程 PID (必需)
 
 示例:
   pgtool admin cancel-query --pid=12345
   pgtool admin cancel-query --pid=12345 --force
+  pgtool admin cancel-query --pid=12345 --dry-run
 
 与 kill-blocking 的区别:
   - cancel-query: 只取消当前查询，连接保持
